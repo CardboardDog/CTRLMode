@@ -2,6 +2,8 @@
 #include<ncurses.h>
 #include<files.hxx>
 #include<vector>
+#include<border.hxx>
+#include<output.hxx>
 int main(){
     bool running,editing,folder=false;
     running=editing=true;
@@ -15,18 +17,29 @@ int main(){
             "Welcome to CTRLMode!\nPress CTRL+O to open a file or directory.\nPress CTRL+E to exit.\nEnjoy :)"
         )
     );
-    WINDOW* window = initscr();
-    if(window == 0x0)return -1;
+    initscr();
     noecho();
     raw();
     start_color();
-    nodelay(window,TRUE);
-    getmaxyx(window,height,width);
-    init_pair(1,COLOR_BLACK,COLOR_WHITE);
+    nodelay(stdscr,TRUE);
+    getmaxyx(stdscr,height,width);
+    curs_set(0);
+    WINDOW* textWindow = newwin(height-3,width-25,0,25);
+    WINDOW* commandWindow = newwin(3,width,height-3,0);
+    WINDOW* folderWindow = newwin(height-3,25,0,0);
     while(running){
-        attron(COLOR_PAIR(0));
-        mvprintw(0,0,"%s",get<2>(openFiles[0]).c_str());
-        wrefresh(window);
+        CTRL::aprintw(commandWindow,1,1,">");
+        CTRL::aprintw(textWindow,1,1,get<2>(openFiles[0]));
+        if(folder){
+        }else{
+            CTRL::aprintw(folderWindow,1,1,"No folder open.\nPress CTRL+O to open!");
+        }
+        CTRL::aborder(textWindow);
+        CTRL::aborder(commandWindow);
+        CTRL::aborder(folderWindow);
+        wrefresh(textWindow);
+        wrefresh(commandWindow);
+        wrefresh(folderWindow);
         char input = getch();
         running = !(input == ('e'&0x1F));
     }
