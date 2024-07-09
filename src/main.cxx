@@ -5,11 +5,14 @@
 #include<border.hxx>
 #include<output.hxx>
 #include<cursor.hxx>
+#include<string>
 int main(){
-    bool running,editing,folder=false;
-    running=editing=true;
+    bool commanding,running,editing,folder,commandUsed;
+    commanding=folder=false;
+    commandUsed=running=editing=true;
     int currentTab = 0;
     std::string openFolder = "";
+    std::string command = "";
     std::vector<std::tuple<bool,std::string,std::string,std::string,bool>> openFiles;
     int width, height;
     openFiles.push_back(
@@ -44,7 +47,6 @@ int main(){
         werase(folderWindow);
         werase(tabsWindow);
         CTRL::aprintw(commandWindow,1,1,">");
-        CTRL::acursor(commandWindow);
         CTRL::aprintw(textWindow,1,1,get<2>(openFiles[currentTab]));
         for(int tab=0;tab<openFiles.size();tab++){
             if(currentTab == tab)wattron(tabsWindow,A_REVERSE);
@@ -62,13 +64,48 @@ int main(){
         CTRL::aborder(commandWindow);
         CTRL::aborder(folderWindow);
         CTRL::aborder(tabsWindow);
-        CTRL::mvwcursor(textWindow,4,8);
+        short input = getch();
+        switch(input){
+            case 'e'&0x1f:
+                running = false;
+                break;
+            case 'o'&0x1f:
+                commanding = true;
+                editing = false;
+                command.clear();
+                input=ERR;
+                break;
+            default:
+                break;
+        }
+        if(commanding){
+            switch (input){   
+                case KEY_DC:
+                case 127:
+                case KEY_BACKSPACE:
+                case '\b':
+                    command.erase(command.length()-1);
+                    break;
+                case '\n':
+                case KEY_ENTER:
+                    commanding = false;
+                    commandUsed = false;
+                    editing = true;
+                    break;
+                case ERR:
+                    break; //ignore
+                default:
+                    command += input;
+                    break;
+            }
+            CTRL::aprintw(commandWindow,1,2,command);
+            CTRL::acursor(commandWindow);
+        }
+        commandUsed = true;
         wrefresh(textWindow);
         wrefresh(commandWindow);
         wrefresh(folderWindow);
         wrefresh(tabsWindow);
-        char input = getch();
-        running = !(input == ('e'&0x1F));
     }
     endwin();
 }
