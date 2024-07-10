@@ -6,6 +6,7 @@
 #include<output.hxx>
 #include<cursor.hxx>
 #include<string>
+#include<sys/stat.h>
 int main(){
     bool commanding,running,editing,folder,commandUsed;
     commanding=folder=false;
@@ -50,11 +51,10 @@ int main(){
         CTRL::aprintw(textWindow,1,1,get<2>(openFiles[currentTab]));
         for(int tab=0;tab<openFiles.size();tab++){
             if(currentTab == tab)wattron(tabsWindow,A_REVERSE);
-            CTRL::aprintw(tabsWindow,1,1+((tab)*10),"\t ");
             CTRL::aprintw(tabsWindow,1,1+(tab*10),get<3>(openFiles[tab]));
+            wattroff(tabsWindow,A_REVERSE);
             CTRL::aprintw(tabsWindow,1,(tab+1)*10,"|");
             if(get<4>(openFiles[tab]))CTRL::aprintw(tabsWindow,1,((tab+1)*10)-1,"*");
-            wattroff(tabsWindow,A_REVERSE);
         }
         if(folder){
         }else{
@@ -100,6 +100,26 @@ int main(){
             }
             CTRL::aprintw(commandWindow,1,2,command);
             CTRL::acursor(commandWindow);
+        }
+        if(commandUsed == false){
+            struct stat fileStat;
+            if(stat(command.c_str(),&fileStat)==0){
+                if(fileStat.st_mode & S_IFDIR){
+                    openFolder = command;
+                    folder = true;
+                }else if(fileStat.st_mode & S_IFREG){
+                    openFiles.push_back(
+                        std::tuple<bool,std::string,std::string,std::string,bool>(
+                            true,
+                            command,
+                            CTRL::readFile(command),
+                            CTRL::chopName(CTRL::getName(command),9),
+                            false
+                        )
+                    );
+                    currentTab = openFiles.size()-1;
+                }
+            }
         }
         commandUsed = true;
         wrefresh(textWindow);
